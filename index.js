@@ -27,10 +27,19 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'My App', message: 'Welcome to my app!' });
 });
 
+app.get('/getUserInfo', async (req, res) => {
+    const referenceId = req.query.referenceId;
+    let response = await db.getUserDetails(referenceId);
+    if (typeof response !== 'object') {
+        res.status(500).send('User information Added');
+    } else {
+        res.status(200).send(response);
+    }
+});
+
 app.post('/insertOrUpdateUserInfo', async (req, res) => {
     const referenceId = req.body.referenceId;
     const data = JSON.parse(req.body.data);
-    const name = data.name;
     let response = await db.updateUserDetails(referenceId, data);
     if (response === 'Added') {
         res.status(200).send('User information Added');
