@@ -1,0 +1,11 @@
+{
+    "aadhaar_seeding_status": true,
+    "first_name": "JOHN",
+    "gender": null,
+    "id_number": "ABCDE1234",
+    "last_name": "DOE",
+    "middle_name": "",
+    "name_on_card": "JOHN DOE",
+    "source": "NSDL",
+    "status": "id_found"
+}

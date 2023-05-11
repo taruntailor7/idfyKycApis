@@ -1,0 +1,10 @@
+{
+    "123456789": {
+        "detected_doc_side": "front",
+        "detected_doc_type": "ind_pan",
+        "is_readable": true,
+        "readability": {
+            "confidence": 93
+        }
+    }
+}
