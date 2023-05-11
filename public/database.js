@@ -50,7 +50,7 @@ module.exports.updateUserDetails = async function updateUserDetails(referenceId,
             }
             query=query.slice(0,query.length-2)
             if(count > 0) {
-                query = `update student_db.usersInfo set`+query+` where referenceId='${referenceId}';`;
+                query = `update student_db.usersInfo set `+query+` where referenceId='${referenceId}';`;
             } else {
                 query = `insert into student_db.usersInfo set `+query+`, referenceId='${referenceId}';`;
             }
