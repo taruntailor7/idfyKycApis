@@ -23,9 +23,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/insertOrUpdateUserInfo',async (req, res) => {
-    console.log(req.query, ' - req.query23456789');
-    const referenceId = req.query.referenceId;
-    const data = JSON.parse(req.query.data);
+    const referenceId = req.body.referenceId;
+    const data = JSON.parse(req.body.data);
     const name = data.name;
     let response = await db.updateUserDetails(referenceId, data);
     if(response === 'Added') {
