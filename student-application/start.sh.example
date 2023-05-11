@@ -1,3 +1,0 @@
-npm install && npm run build:production && pm2 start ecosystem.config.js --env production
-
-# default environment : production

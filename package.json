@@ -1,0 +1,22 @@
+{
+  "name": "idfykycapis",
+  "version": "1.0.0",
+  "description": "idfykycapis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mukul20000/idfyKycApis.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mukul20000/idfyKycApis/issues"
+  },
+  "homepage": "https://github.com/mukul20000/idfyKycApis#readme",
+  "dependencies": {
+    "pug": "^3.0.2"
+  }
+}
