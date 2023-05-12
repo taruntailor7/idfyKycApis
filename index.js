@@ -207,7 +207,7 @@ app.post('/verifyIdDetails', async (req, res) => {
                     return res.status(500).send({ response: 'false' });
                 }
             });
-        }, 5000);
+        }, 7000);
     });
 
 });

@@ -46,7 +46,6 @@ module.exports.getUserDetails = async function getUserDetails(referenceId, data)
         }
         if (result !== null && result.length >= 0) {
             userObj = result[0];
-            console.log(JSON.stringify(userObj, null, 5) + ' - userObj');
         } else {
             userObj = null;
         }
@@ -130,8 +129,6 @@ module.exports.logIn = async function logIn(email, imageUrl) {
 
         if (result !== null && result.length > 0) {
             userInfo = result[0];
-            console.log(JSON.stringify(result, null, 5));
-            console.log(JSON.stringify(userInfo, null, 5) + ' - userObj');
             const compareFaceOptions = {
                 'method': 'POST',
                 'url': `${IDFY_API_URL}/v3/tasks/async/compare/face`,
@@ -172,15 +169,10 @@ module.exports.logIn = async function logIn(email, imageUrl) {
                 }
             };
             const getTaskResponse = await requestPromisified(getTaskOptions);
-            console.log('getTaskResponse: ', getTaskResponse);
 
-            console.log(JSON.stringify(getTaskResponse ? getTaskResponse.body : null, null, 5));
             responseBodyForChecking = getTaskResponse ? getTaskResponse.body : null;
             responseBodyForChecking = JSON.parse(responseBodyForChecking);
-            console.log(`${responseBodyForChecking} - responseBodyForChecking 123456789`);
-            console.log(`${JSON.stringify(responseBodyForChecking[0].result)} - responseBodyForChecking.result 123456789`);
-            console.log(`${responseBodyForChecking[0].result.is_a_match} - responseBodyForChecking.result 123456789`);
-            if (responseBodyForChecking && responseBodyForChecking[0].result.is_a_match) {
+            if (responseBodyForChecking && responseBodyForChecking.length>0 && responseBodyForChecking[0].result && responseBodyForChecking[0].result.is_a_match) {
                 updateStatus ='Login Successful';
             } else {
                 updateStatus =  'error in getTaskResponse, result.is_a_match not found';
