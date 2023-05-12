@@ -40,7 +40,7 @@ function executeQuery(query, cb) {
 module.exports.getUserDetails = async function getUserDetails(referenceId, data) {
     let query = `select * from ${DB_TABLE_NAME} where referenceId=${referenceId}`;
     let userObj = null;
-    await executeQueryCommand(query, async (result) => {
+    await executeQueryCommand(query, async (error, result) => {
         if (result === 'error') {
             userObj = null;
         }
@@ -54,10 +54,41 @@ module.exports.getUserDetails = async function getUserDetails(referenceId, data)
     return userObj;
 };
 
+module.exports.resetUser = async function resetUser(referenceId) {
+    let checkRecordPresentToReset = `select count(*) as recordsCount from ${DB_NAME}.${DB_TABLE_NAME} where referenceId=${referenceId};`;
+    let updateStatus='';
+    console.log(checkRecordPresentToReset, ' -  checkRecordPresentToReset');
+    await executeQueryCommand(checkRecordPresentToReset, async (error, result) => {
+        if (result === 'error') {
+            updateStatus = 'error';
+        }
+        console.log(result);
+        if (result !== null && result.length >= 0) {
+            let count = result[0].recordsCount;
+            let resetUserInfoQuery = '';
+            if (count <= 0) {
+                updateStatus = 'User not present';
+            } else {
+                resetUserInfoQuery = `delete from ${DB_NAME}.${DB_TABLE_NAME} where referenceId='${referenceId}';`;
+                await executeQueryCommand(resetUserInfoQuery, async (result) => {
+                    if (result === 'error') {
+                        updateStatus = 'error';
+                    } else {
+                        updateStatus = 'Record Cleared';
+                    }
+                });
+            }
+        } else {
+            updateStatus = 'some issue in fetching data from db';
+        }
+    });
+    return updateStatus;
+}
+
 module.exports.signUp = async function signUp(email, imageUrl) {
     let updateStatus = '';
     let checkRecordsAlreadyPresentForEmail = `select count(*) as recordsCount from ${DB_NAME}.${DB_LOGIN_TABLE_NAME} where email='${email}'`;
-    await executeQueryCommand(checkRecordsAlreadyPresentForEmail, async (result) => {
+    await executeQueryCommand(checkRecordsAlreadyPresentForEmail, async (error, result) => {
         if (result === 'error') {
             updateStatus = 'error';
         }
@@ -68,7 +99,7 @@ module.exports.signUp = async function signUp(email, imageUrl) {
                 updateStatus = 'User already present';
             } else {
                 insertNewUserQuery = `insert into ${DB_NAME}.${DB_LOGIN_TABLE_NAME} set email='${email}',image='${imageUrl}';`;
-                await executeQueryCommand(insertNewUserQuery, async (result) => {
+                await executeQueryCommand(insertNewUserQuery, async (error, result) => {
                     if (result === 'error') {
                         updateStatus = 'error';
                     } else {
@@ -169,7 +200,7 @@ module.exports.logIn = async function logIn(email, imageUrl) {
 module.exports.updateUserDetails = async function updateUserDetails(referenceId, data) {
     let checkReferceIdPresentQuery = `select count(*) as recordsCount from ${DB_NAME}.${DB_TABLE_NAME} where referenceId='${referenceId}';`;
     let updateStatus = '';
-    await executeQueryCommand(checkReferceIdPresentQuery, async (result) => {
+    await executeQueryCommand(checkReferceIdPresentQuery, async (error, result) => {
         if (result === 'error') {
             updateStatus = 'error';
         }
@@ -185,8 +216,7 @@ module.exports.updateUserDetails = async function updateUserDetails(referenceId,
             } else {
                 query = `insert into ${DB_NAME}.${DB_TABLE_NAME} set ` + query + `, referenceId='${referenceId}';`;
             }
-            console.log(query + ' - query');
-            await executeQueryCommand(query, async (result) => {
+            await executeQueryCommand(query, async (error, result) => {
                 if (result === 'error') {
                     updateStatus = 'error';
                 } else {

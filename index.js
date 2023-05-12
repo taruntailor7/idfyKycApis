@@ -56,11 +56,20 @@ app.post('/logIn',async (req, res) => {
     const email = req.body.email;
     const imageUrl = req.body.imageUrl;
     let response = await db.logIn(email, imageUrl);
-    console.log(response, ' - response');
     if (response === 'Login Successful') {
         res.status(200).send({response: true});
     } else {
         res.status(500).send({response: response});
+    }
+});
+
+app.post('/resetUserInfo',async (req, res) => {
+    const referenceId = req.body.referenceId;
+    let response = await db.resetUser(referenceId);
+    if (response === 'Record Cleared') {
+        res.status(200).send({response: true});
+    } else {
+        res.status(500).send({response: false});
     }
 });
 
