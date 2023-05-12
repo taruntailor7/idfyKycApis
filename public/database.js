@@ -1,6 +1,8 @@
-require('dotenv').config();
-const {DB_NAME, DB_TABLE_NAME} = process.env;
+const util = require('util');
 
+require('dotenv').config();
+const { DB_NAME, DB_TABLE_NAME, DB_LOGIN_TABLE_NAME } = process.env;
+const { API_KEY, ACCOUNT_ID, IDFY_API_URL } = process.env;
 const dbOpen = `USE ${DB_NAME}`;
 const dbConfig = {
     connectionLimit: 10,
@@ -11,14 +13,15 @@ const dbConfig = {
     port: process.env.DB_PORT || 3307,
 };
 const mysql = require('mysql');
+const request = require('request');
 
 
 const pool = mysql.createPool(dbConfig);
 
 async function executeQueryCommand(query, cb) {
-    await executeQuery(query).then((data) => cb(data)).catch((error) => {
+    await executeQuery(query).then((data) => cb(null, data)).catch((error) => {
         console.error('error:: ', error);
-        cb('error');
+        cb('error', null);
     });
 }
 
@@ -36,20 +39,132 @@ function executeQuery(query, cb) {
 }
 module.exports.getUserDetails = async function getUserDetails(referenceId, data) {
     let query = `select * from ${DB_TABLE_NAME} where referenceId=${referenceId}`;
-    let userObj=null;
+    let userObj = null;
     await executeQueryCommand(query, async (result) => {
         if (result === 'error') {
-            userObj=null;
+            userObj = null;
         }
         if (result !== null && result.length >= 0) {
             userObj = result[0];
-            console.log(JSON.stringify(userObj,null,5)+' - userObj');
+            console.log(JSON.stringify(userObj, null, 5) + ' - userObj');
         } else {
             userObj = null;
         }
     });
     return userObj;
 };
+
+module.exports.signUp = async function signUp(email, imageUrl) {
+    let updateStatus = '';
+    let checkRecordsAlreadyPresentForEmail = `select count(*) as recordsCount from ${DB_NAME}.${DB_LOGIN_TABLE_NAME} where email='${email}'`;
+    await executeQueryCommand(checkRecordsAlreadyPresentForEmail, async (result) => {
+        if (result === 'error') {
+            updateStatus = 'error';
+        }
+        if (result !== null && result.length >= 0) {
+            let count = result[0].recordsCount;
+            let insertNewUserQuery = '';
+            if (count > 0) {
+                updateStatus = 'User already present';
+            } else {
+                insertNewUserQuery = `insert into ${DB_NAME}.${DB_LOGIN_TABLE_NAME} set email='${email}',image='${imageUrl}';`;
+                await executeQueryCommand(insertNewUserQuery, async (result) => {
+                    if (result === 'error') {
+                        updateStatus = 'error';
+                    } else {
+                        updateStatus = 'Record Added';
+                    }
+                });
+            }
+            console.log(insertNewUserQuery + ' - insertNewUserQuery');
+        } else {
+            updateStatus = 'some issue in fetching data from db';
+        }
+    });
+    return updateStatus;
+}
+
+module.exports.logIn = async function logIn(email, imageUrl) {
+    console.log('database: login: email: ', email);
+    let updateStatus = '';
+    let checkRecordsAlreadyPresentForEmail = `select email, image from ${DB_NAME}.${DB_LOGIN_TABLE_NAME} where email='${email}'`;
+    let userInfo = '';
+    try {
+        const executeQueryPromisified = util.promisify(executeQueryCommand);
+        const result = await executeQueryPromisified(checkRecordsAlreadyPresentForEmail);
+        console.log('executeQuery output: ', result);
+        if (result === 'error') {
+            return 'error';
+        }
+
+        if (result !== null && result.length > 0) {
+            userInfo = result[0];
+            console.log(JSON.stringify(result, null, 5));
+            console.log(JSON.stringify(userInfo, null, 5) + ' - userObj');
+            const compareFaceOptions = {
+                'method': 'POST',
+                'url': `${IDFY_API_URL}/v3/tasks/async/compare/face`,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'account-id': ACCOUNT_ID,
+                    'api-key': API_KEY
+                },
+                body: JSON.stringify({
+                    "task_id": "1",
+                    "group_id": "2",
+                    "data": {
+                        "document1": userInfo.image,
+                        "document2": imageUrl
+                    }
+                })
+    
+            };
+            let requestId = '';
+            const requestPromisified = util.promisify(request);
+            
+            let compareFaceResponse = await requestPromisified(compareFaceOptions);
+            console.log('compareFaceResponse: ', compareFaceResponse);
+            let body = JSON.parse(compareFaceResponse.body);
+            requestId = body.request_id;
+            console.log(`${requestId} - requestId 123456789`);
+
+            let sleepPromisified = util.promisify((a, f) => setTimeout(f, a))
+            await sleepPromisified(5000);
+            
+            const getTaskOptions = {
+                'method': 'GET',
+                'url': `${IDFY_API_URL}/v3/tasks?request_id=${requestId}`,
+                'headers': {
+                    'api-key': API_KEY,
+                    'Content-Type': 'application/json',
+                    'account-id': ACCOUNT_ID
+                }
+            };
+            const getTaskResponse = await requestPromisified(getTaskOptions);
+            console.log('getTaskResponse: ', getTaskResponse);
+
+            console.log(JSON.stringify(getTaskResponse ? getTaskResponse.body : null, null, 5));
+            responseBodyForChecking = getTaskResponse ? getTaskResponse.body : null;
+            responseBodyForChecking = JSON.parse(responseBodyForChecking);
+            console.log(`${responseBodyForChecking} - responseBodyForChecking 123456789`);
+            console.log(`${JSON.stringify(responseBodyForChecking[0].result)} - responseBodyForChecking.result 123456789`);
+            console.log(`${responseBodyForChecking[0].result.is_a_match} - responseBodyForChecking.result 123456789`);
+            if (responseBodyForChecking && responseBodyForChecking[0].result.is_a_match) {
+                updateStatus ='Login Successful';
+            } else {
+                updateStatus =  'error in getTaskResponse, result.is_a_match not found';
+                console.log(updateStatus);
+            }
+        } else {
+            updateStatus = 'No user with provided mail Id';
+        }
+        console.log('Returning updateStatus: ', updateStatus);
+        return updateStatus;
+    }  catch(error) {
+        console.log('Try catch error from execute query: ', error);
+        return error;
+    }
+}
 
 module.exports.updateUserDetails = async function updateUserDetails(referenceId, data) {
     let checkReferceIdPresentQuery = `select count(*) as recordsCount from ${DB_NAME}.${DB_TABLE_NAME} where referenceId='${referenceId}';`;

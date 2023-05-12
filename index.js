@@ -41,6 +41,29 @@ app.get('/getUserInfo', async (req, res) => {
     }
 });
 
+app.post('/signUp',async (req, res) => {
+    const email = req.body.email;
+    const imageUrl = req.body.imageUrl;
+    let response = await db.signUp(email, imageUrl);
+    if (response === 'Record Added') {
+        res.status(200).send({response: true});
+    } else {
+        res.status(500).send({response: response});
+    }
+});
+
+app.post('/logIn',async (req, res) => {
+    const email = req.body.email;
+    const imageUrl = req.body.imageUrl;
+    let response = await db.logIn(email, imageUrl);
+    console.log(response, ' - response');
+    if (response === 'Login Successful') {
+        res.status(200).send({response: true});
+    } else {
+        res.status(500).send({response: response});
+    }
+});
+
 app.post('/insertOrUpdateUserInfo', async (req, res) => {
     const referenceId = req.body.referenceId;
     const data = JSON.parse(req.body.data);
@@ -136,9 +159,7 @@ app.post('/verifyIdDetails', async (req, res) => {
     request(options, async function (error, response) {
         if (error) throw new Error(error);
         let body = JSON.parse(response.body);
-        console.log(body + ' - body');
         requestId = body.request_id;
-        console.log(requestId + ' - requestId');
         var options = {
             'method': 'GET',
             'url': `${IDFY_API_URL}/v3/tasks?request_id=${requestId}`,
